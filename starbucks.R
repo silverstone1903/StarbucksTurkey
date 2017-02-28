@@ -5,7 +5,7 @@ library(leaflet)
 library(highcharter)
 library(DT)
 
-starbucks <- read.csv("C:/Users/silverstone/Desktop/starbucks.csv", stringsAsFactors = F)
+starbucks <- read.csv("starbucks.csv", stringsAsFactors = F)
 head(starbucks)
 
 turkey <- starbucks[starbucks$Country == "TR",]
