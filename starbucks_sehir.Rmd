@@ -1,0 +1,113 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 8, fig.height = 7)
+```
+
+<center>
+<h2>Türkiye'de bulunan Starbucks şubelerinin şehirlere dağılımının görselleştirilmesi </h2> <br>
+![](https://scontent-otp1-1.xx.fbcdn.net/v/t1.0-9/10325145_10154052996529829_2480027482392710697_n.png?oh=bf195223552cc3736c12ba6408706971&oe=5926710F) </center>
+
+Kaggle'da bulunan [Starbucks Location Worldwide](https://www.kaggle.com/starbucks/store-locations) verisi kullanılarak hazırlanmıştır. 
+
+<br>
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(leaflet)
+library(highcharter)
+library(leaflet)
+library(DT)
+```
+
+Verinin ham halini R'a. çekiyoruz.
+<br>
+```{r}
+starbucks <- read.csv("starbucks.csv", stringsAsFactors = F)
+head(starbucks)
+```
+
+
+*turkey* isimli değişkene ülke kodu *TR* olan satırları atıyoruz.
+<br>
+```{r}
+turkey <- starbucks[starbucks$Country == "TR",]
+head(turkey)
+```
+
+
+
+<br>
+Yanlış yazılmış şehir isimleri için gerekli düzeltmeleri yapıyoruz.
+```{r}
+turkey$City[turkey$City == "Istanbul - Asya"] <- "Istanbul"
+turkey$City[turkey$City == "Istanbul - Avrupa"] <- "Istanbul"
+turkey$City[turkey$City == "Pendik"] <- "Istanbul"
+turkey$City[turkey$City == "Instanbul - Asya"] <- "Istanbul"
+turkey$City[turkey$City == "Beyoglu"] <- "Istanbul"
+turkey$City[turkey$City == "Yenimahalle Merkez"] <- "Ankara"
+turkey$City[turkey$City == "Susurluk"] <- "Balikesir"
+turkey$City[turkey$City == "Osmangazi"] <- "Bursa"
+turkey$City[turkey$City == "Tepebasi"] <- "Eskisehir"
+turkey$City[turkey$City == "Izmit"] <- "Kocaeli"
+turkey$City[turkey$City == "Kocaeli (Izmit)"] <- "Kocaeli"
+turkey$City[turkey$City == "Mersin (Icel)"] <- "Mersin"
+turkey$City[turkey$City == "Mersin Icel"] <- "Mersin"
+turkey$City[turkey$City == "Bodrum"] <- "Mugla"
+turkey$City[turkey$City == "Afyon"] <- "Afyonkarahisar"
+``` 
+
+
+
+Kaç şehir ve kaç şube var?
+```{r}
+cat("Türkiye'de", paste0(length(unique(turkey$City))," farklı şehirde toplam ", paste0(nrow(turkey))," şube bulunmaktadır."))
+```
+
+<br>
+Şehirlerde bulunan Starbucks sayılarını ve oranlarını hesaplıyoruz.
+```{r}
+sehir <- turkey %>% group_by(City) %>% summarise(Toplam = n(), 
+              Oran = round(Toplam/dim(turkey)[1] * 100, 2)) %>% arrange(desc(Toplam)) 
+sehir
+```
+<br>
+<br>
+**Highcharts** paketini kullanrak interaktif *treemap* oluşturuyoruz.
+```{r}
+hchart(sehir, "treemap", hcaes(x = City, value = Toplam, color = Toplam )) %>%
+hc_colorAxis(stops = color_stops(colors = c("#039e52", "#00704a", "#024c27"))) %>%
+hc_add_theme(hc_theme_google()) %>%
+hc_title(text = "Şehirlere göre Starbucks sayıları") %>%
+hc_credits(enabled = TRUE, text = "Kaynak: Starbucks Locations Worldwide verisi - kaggle.com", style = list(fontSize = "10px")) %>%
+hc_legend(enabled = TRUE)
+```
+
+<br>
+**leaflet** ile haritalandırıyoruz.
+<center>
+```{r}
+leaflet() %>% addTiles() %>% setView(lat=38.8714568, lng =30.752626, zoom= 5) %>% addCircles(lat= turkey$Latitude, lng = turkey$Longitude, color = "#024c27") %>% clearBounds()
+```
+</center>
+<br>
+son olarak da **DT** paketini kullanarak interaktif tablo haline getiriyoruz.
+```{r}
+datatable(sehir)
+```
+<br><br>
+
+
+### Referanslar
+
+* https://www.kaggle.com/umeshnarayanappa/d/starbucks/store-locations/exploring-starbucks-stores/notebook
+* https://www.kaggle.com/jitender786/d/starbucks/store-locations/starbucks-world-top3-countries-with-india/notebook
+
+<br>
+Kaggle'da yayınladığım script - https://www.kaggle.com/silverstone1903/d/starbucks/store-locations/starbucks-turkey
+<br>
+<br>
